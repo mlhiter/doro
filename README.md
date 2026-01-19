@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
+  <img src="./public/logo.svg" alt="Doro logo" width="120" height="120" />
+  <h1>Doro</h1>
+</div>
 
-## Getting Started
+An AI product prototyping platform inspired by Lovable. Turn natural-language prompts into runnable Next.js fragments, with iterative chat, code snapshots, live previews, and multi-project management.
 
-First, run the development server:
+## Features
+
+- Conversation-driven build flow; user messages trigger generation
+- Inngest + Agent Kit orchestration; results are persisted and revisitable
+- E2B Sandbox runs code fragments with embedded iframe preview
+- Fragment cards for preview switching, refresh, copy link, and open in new tab
+- Full-stack stack: Next.js App Router + tRPC + TanStack Query
+- Prisma + Postgres for projects, messages, and fragment persistence
+- Resizable split workspace optimized for chat + preview
+
+## Core Flow
+
+1. User creates a project or sends a message
+2. tRPC writes the message and triggers an Inngest event
+3. The agent generates code and a summary in E2B Sandbox
+4. The result is stored as a Fragment and is previewable
+5. The UI polls for updates; selecting a Fragment shows it live
+
+## Tech Stack
+
+- Frontend: Next.js 16 (App Router), React 19, Tailwind CSS, Shadcn UI
+- Data: Prisma, PostgreSQL
+- Orchestration: tRPC, TanStack Query
+- AI Runtime: Inngest Agent Kit, Anthropic models, E2B Sandbox
+
+## Quick Start
+
+### 1) Install dependencies
+
+```bash
+npm install
+```
+
+### 2) Configure environment variables
+
+Create a `.env` file with:
+
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DB_NAME"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+ANTHROPIC_API_KEY="your-anthropic-api-key"
+ANTHROPIC_API_BASE_URL="https://api.anthropic.com" # Optional: proxy or private gateway
+E2B_API_KEY="your-e2b-api-key"
+```
+
+If you use Inngest Cloud, also add the required signature/event keys.
+
+### 3) Initialize the database
+
+```bash
+npx prisma migrate dev
+```
+
+### 4) Start the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5) (Optional) Start Inngest Dev Server
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx inngest-cli dev -u http://localhost:3000/api/inngest
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/                     # Next.js App Router
+  inngest/                 # Inngest client & functions
+  modules/
+    messages/              # Message tRPC + UI
+    projects/              # Project tRPC + UI
+  trpc/                    # tRPC setup and client
+prisma/                    # Prisma schema & migrations
+public/                    # Static assets
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev      # Local development
+npm run build    # Production build
+npm run start    # Production server
+npm run lint     # Lint checks
+```
 
-## Deploy on Vercel
+## Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Issues and PRs are welcome. Let’s make Doro a truly usable Lovable alternative.
