@@ -35,7 +35,7 @@ export const ProjectView = ({ projectId }: Props) => {
             />
           </Suspense>
         </ResizablePanel>
-        <ResizableHandle withHandle />
+        <ResizableHandle className="transition-colors hover:bg-primary/20 focus-visible:ring-0" />
         <ResizablePanel defaultSize={65} minSize={50}>
           <Tabs
             defaultValue="preview"
