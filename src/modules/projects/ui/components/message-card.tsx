@@ -46,7 +46,7 @@ interface UserMessageProps {
 export const UserMessage = ({ content }: UserMessageProps) => {
   return (
     <div className="flex justify-end pr-2 pb-4 pl-10">
-      <Card className="max-w-[80%] rounded-lg border-none bg-muted p-3 break-words shadow-none">
+      <Card className="max-w-[80%] rounded-lg border-none bg-muted p-3 wrap-break-word shadow-none">
         <CardContent>
           <p>{content}</p>
         </CardContent>
