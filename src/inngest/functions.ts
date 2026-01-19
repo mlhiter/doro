@@ -1,10 +1,11 @@
 import { inngest } from './client'
-import { createAgent, anthropic, createTool, createNetwork, Tool } from '@inngest/agent-kit'
+import { createAgent, anthropic, createTool, createNetwork, Tool, Message, createState } from '@inngest/agent-kit'
 import { Sandbox } from 'e2b'
 import { getSandbox, lastAssistantTextMessageContent } from './utils'
 import z from 'zod'
-import { PROMPT } from '@/prompt'
+import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from '@/prompt'
 import prisma from '@/lib/db'
+import { parseAgentOutput } from '@/lib/utils'
 
 interface AgentState {
   summary: string
@@ -20,12 +21,44 @@ export const codeAgentFunction = inngest.createFunction(
       return sandbox.sandboxId
     })
 
+    const previousMessages = await step.run('get-previous-messages', async () => {
+      const formattedMessages: Message[] = []
+      const messages = await prisma.message.findMany({
+        where: {
+          projectId: event.data.projectId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+
+      for (const message of messages) {
+        formattedMessages.push({
+          type: 'text',
+          role: message.role === 'USER' ? 'user' : 'assistant',
+          content: message.content,
+        })
+      }
+
+      return formattedMessages
+    })
+
+    const state = createState<AgentState>(
+      {
+        summary: '',
+        files: {},
+      },
+      {
+        messages: previousMessages,
+      }
+    )
+
     const codeAgent = createAgent<AgentState>({
       name: 'code-agent',
       description: 'An expert coding agent',
       system: PROMPT,
       model: anthropic({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-5-20250929',
         baseUrl: process.env.ANTHROPIC_API_BASE_URL,
         defaultParameters: {
           temperature: 0.1,
@@ -134,6 +167,7 @@ export const codeAgentFunction = inngest.createFunction(
       name: 'coding-agent-network',
       agents: [codeAgent],
       maxIter: 15,
+      defaultState: state,
       router: async ({ network }) => {
         const summary = network.state.data.summary
         if (summary) {
@@ -143,7 +177,40 @@ export const codeAgentFunction = inngest.createFunction(
       },
     })
 
-    const result = await network.run(event.data.value)
+    const result = await network.run(event.data.value, {
+      state: state,
+    })
+
+    const fragmentTitleGenerator = createAgent<AgentState>({
+      name: 'fragment-title-generator',
+      description: 'An expert fragment title generator',
+      system: FRAGMENT_TITLE_PROMPT,
+      model: anthropic({
+        model: 'claude-haiku-4-5-20251001',
+        baseUrl: process.env.ANTHROPIC_API_BASE_URL,
+        defaultParameters: {
+          temperature: 0.1,
+          max_tokens: 32000,
+        },
+      }),
+    })
+
+    const responseGenerator = createAgent<AgentState>({
+      name: 'response-generator',
+      description: 'An expert response generator',
+      system: RESPONSE_PROMPT,
+      model: anthropic({
+        model: 'claude-haiku-4-5-20251001',
+        baseUrl: process.env.ANTHROPIC_API_BASE_URL,
+        defaultParameters: {
+          temperature: 0.1,
+          max_tokens: 32000,
+        },
+      }),
+    })
+
+    const { output: fragmentTitleOutput } = await fragmentTitleGenerator.run(result.state.data.summary)
+    const { output: responseOutput } = await responseGenerator.run(result.state.data.summary)
 
     const isError = !result.state.data.summary || Object.keys(result.state.data.files || {}).length === 0
 
@@ -167,13 +234,13 @@ export const codeAgentFunction = inngest.createFunction(
       return await prisma.message.create({
         data: {
           projectId: event.data.projectId,
-          content: result.state.data.summary,
+          content: parseAgentOutput(responseOutput),
           role: 'ASSISTANT',
           type: 'RESULT',
           fragment: {
             create: {
               sandboxUrl: sandboxUrl,
-              title: 'Fragment',
+              title: parseAgentOutput(fragmentTitleOutput),
               files: result.state.data.files,
             },
           },

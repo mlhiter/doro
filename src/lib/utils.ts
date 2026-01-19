@@ -1,4 +1,5 @@
 import { type TreeItem } from '@/types'
+import { Message } from '@inngest/agent-kit'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -56,4 +57,16 @@ export function convertFilesToTreeItems(files: { [path: string]: string }): Tree
 
   const result = convertNode(tree)
   return Array.isArray(result) ? result : [result]
+}
+
+export const parseAgentOutput = (value: Message[]) => {
+  const output = value[0]
+  if (output.type !== 'text') {
+    return 'Fragment'
+  }
+  if (Array.isArray(output.content)) {
+    return output.content.map((txt) => txt.text).join('')
+  } else {
+    return output.content
+  }
 }
