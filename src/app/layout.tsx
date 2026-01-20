@@ -5,6 +5,7 @@ import { TRPCReactProvider } from '@/trpc/client'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from 'next-themes'
 import { ClerkProvider } from '@clerk/nextjs'
+import { Analytics } from '@vercel/analytics/next'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,6 +35,7 @@ export default function RootLayout({
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               {children}
               <Toaster />
+              <Analytics />
             </ThemeProvider>
           </body>
         </html>
