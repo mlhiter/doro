@@ -10,10 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CodeIcon, CrownIcon, EyeIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { FragmentCode } from '../components/fragment-code'
 import { FileExplorer } from '@/components/file-explorer'
 import { UserControl } from '@/components/user-control'
 import { useAuth } from '@clerk/nextjs'
+import { ErrorBoundary } from 'react-error-boundary'
 
 interface Props {
   projectId: string
@@ -29,16 +29,20 @@ export const ProjectView = ({ projectId }: Props) => {
     <div className="h-screen">
       <ResizablePanelGroup orientation="horizontal">
         <ResizablePanel defaultSize={35} minSize={20} className="flex min-h-0 flex-col">
-          <Suspense fallback={<p>Loading project...</p>}>
-            <ProjectHeader projectId={projectId} />
-          </Suspense>
-          <Suspense fallback={<p>Loading messages...</p>}>
-            <MessagesContainer
-              projectId={projectId}
-              activeFragment={activeFragment}
-              setActiveFragment={setActiveFragment}
-            />
-          </Suspense>
+          <ErrorBoundary fallback={<p>Project header error.</p>}>
+            <Suspense fallback={<p>Loading project...</p>}>
+              <ProjectHeader projectId={projectId} />
+            </Suspense>
+          </ErrorBoundary>
+          <ErrorBoundary fallback={<p>Messages container error.</p>}>
+            <Suspense fallback={<p>Loading messages...</p>}>
+              <MessagesContainer
+                projectId={projectId}
+                activeFragment={activeFragment}
+                setActiveFragment={setActiveFragment}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </ResizablePanel>
         <ResizableHandle className="transition-colors hover:bg-primary/20 focus-visible:ring-0" />
         <ResizablePanel defaultSize={65} minSize={50}>
