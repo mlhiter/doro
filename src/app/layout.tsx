@@ -28,7 +28,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: 'var(--primary)',
+        },
+      }}>
       <TRPCReactProvider>
         <html lang="en" suppressHydrationWarning>
           <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
